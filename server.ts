@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
-import { createServer as createViteServer } from 'vite';
+
 import { getDb, saveDb, writeAuditLog, hashPassword, generateSalt, syncFromSupabase } from './src/db.js';
 import { Student, SchoolProfile, ActivityLog } from './src/types.js';
 
@@ -737,6 +737,7 @@ app.use((err: any, req: any, res: any, next: any) => {
 async function startServer() {
   // Integrate Vite for development, serve static in production
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
