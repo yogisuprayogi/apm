@@ -356,7 +356,11 @@ export async function syncFromSupabase(): Promise<void> {
     };
 
     // Keep backup copy in database.json
-    fs.writeFileSync(DB_FILE_PATH, JSON.stringify(cache, null, 2), 'utf-8');
+    try {
+      fs.writeFileSync(DB_FILE_PATH, JSON.stringify(cache, null, 2), 'utf-8');
+    } catch (fsErr) {
+      console.warn('[Supabase] Warning: could not write local backup database.json in read-only environment:', fsErr);
+    }
     console.log('[Supabase] Successfully warmth cached the entire state from Supabase!');
 
     if (neededPush) {

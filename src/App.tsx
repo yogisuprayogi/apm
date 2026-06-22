@@ -173,8 +173,20 @@ export default function App() {
         );
         return true;
       } else {
-        const errorData = await res.json();
-        const errMsg = errorData.message || 'Gagal masuk sistem';
+        let errMsg = 'Gagal masuk sistem';
+        try {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await res.json();
+            errMsg = errorData.message || errMsg;
+          } else {
+            const errorText = await res.text();
+            console.error('Non-JSON server response:', errorText);
+            errMsg = `Kesalahan server (${res.status})`;
+          }
+        } catch (parseErr) {
+          errMsg = `Gagal berkomunikasi dengan server (${res.status})`;
+        }
         showToast(errMsg, 'error');
         throw new Error(errMsg);
       }
