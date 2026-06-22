@@ -74,16 +74,10 @@ const activeSessions = {
   get(token: string): Session | undefined {
     if (!token || typeof token !== 'string') return undefined;
     try {
-      const lastDot = token.lastIndexOf('.');
-      if (lastDot === -1) return undefined;
+      const parts = token.split('.');
+      if (parts.length !== 2) return undefined;
 
-      const beforeDot = token.substring(0, lastDot);
-      const signature = token.substring(lastDot + 1);
-
-      const lastUnderscore = beforeDot.lastIndexOf('_');
-      if (lastUnderscore === -1) return undefined;
-
-      const base64Payload = beforeDot.substring(lastUnderscore + 1);
+      const [base64Payload, signature] = parts;
       const payloadStr = Buffer.from(base64Payload, 'base64url').toString('utf-8');
       const payload = JSON.parse(payloadStr);
 
@@ -96,7 +90,7 @@ const activeSessions = {
 
       const expectedSignature = crypto
         .createHmac('sha256', secret)
-        .update(beforeDot)
+        .update(base64Payload)
         .digest('base64url');
 
       if (signature !== expectedSignature) {
@@ -199,7 +193,7 @@ app.post('/api/auth/login', sanitizeInput, (req, res) => {
   if (username === 'admin') {
     const computedHash = hashPassword(password, db.adminSalt);
     if (computedHash === db.adminPasswordHash) {
-      const token = 'admin_tok_' + generateSecureToken('admin', 'admin');
+      const token = generateSecureToken('admin', 'admin');
       activeSessions.set(token, {
         token,
         role: 'admin',
@@ -233,7 +227,7 @@ app.post('/api/auth/login', sanitizeInput, (req, res) => {
 
   const computedHash = hashPassword(password, student.salt);
   if (computedHash === student.passwordHash) {
-    const token = 'student_tok_' + student.nisn + '_' + generateSecureToken('student', student.id);
+    const token = generateSecureToken('student', student.id);
     activeSessions.set(token, {
       token,
       role: 'student',
