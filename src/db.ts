@@ -290,12 +290,14 @@ export async function syncFromSupabase(): Promise<void> {
 
     // Ensure 'tik' is always defined and saved
     const hasTik = admins.some(a => a.username === 'tik');
+    let neededPush = false;
     if (!hasTik) {
       admins.push({
         username: 'tik',
         passwordHash: TIK_ADMIN_HASH,
         salt: TIK_ADMIN_SALT
       });
+      neededPush = true;
     }
 
     // Fetch students
@@ -348,6 +350,11 @@ export async function syncFromSupabase(): Promise<void> {
     // Keep backup copy in database.json
     fs.writeFileSync(DB_FILE_PATH, JSON.stringify(cache, null, 2), 'utf-8');
     console.log('[Supabase] Successfully warmth cached the entire state from Supabase!');
+
+    if (neededPush) {
+      console.log('[Supabase] Missing `tik` admin user detected. Force syncing to remote Supabase DB...');
+      await pushAllToSupabase(cache);
+    }
   } catch (err: any) {
     console.error('[Supabase] Error pre-hydrating state:', err.message || err);
   }
