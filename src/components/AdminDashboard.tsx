@@ -95,7 +95,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     name: schoolProfile.name,
     announcementDate: schoolProfile.announcementDate,
     announcementHeader: schoolProfile.announcementHeader,
-    logo: schoolProfile.logo
+    logo: schoolProfile.logo,
+    showPrintPdf: schoolProfile.showPrintPdf !== false,
+    showParentNotification: schoolProfile.showParentNotification !== false
   });
   const [isDraggingLogo, setIsDraggingLogo] = useState(false);
 
@@ -1437,6 +1439,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                     </div>
 
+                  </div>
+                </div>
+
+                {/* Student Page Display Options */}
+                <div className="border-t border-slate-150 dark:border-slate-800 pt-5 space-y-4">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-205 uppercase tracking-wider">Pengaturan Halaman Siswa</h3>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Sembunyikan atau tampilkan komponen tertentu di dashboard akun siswa.</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="flex items-start gap-3 cursor-pointer select-none group p-3 border border-slate-100 dark:border-slate-850 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-950 transition-colors">
+                      <div className="flex items-center h-5">
+                        <input
+                          type="checkbox"
+                          checked={profileForm.showPrintPdf}
+                          onChange={(e) => setProfileForm({ ...profileForm, showPrintPdf: e.target.checked })}
+                          className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </div>
+                      <div className="text-xs">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 transition-colors">Tampilkan Tombol Cetak PDF</span>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Siswa dapat melihat &amp; mengunduh berkas PDF bukti pemilihan paket.</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-3 cursor-pointer select-none group p-3 border border-slate-100 dark:border-slate-850 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-950 transition-colors">
+                      <div className="flex items-center h-5">
+                        <input
+                          type="checkbox"
+                          checked={profileForm.showParentNotification}
+                          onChange={(e) => setProfileForm({ ...profileForm, showParentNotification: e.target.checked })}
+                          className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </div>
+                      <div className="text-xs">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 transition-colors">Pemberitahuan Wali Orang Tua</span>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Tampilkan kolom pesan info pemberitahuan wali orang tua di halaman siswa.</p>
+                      </div>
+                    </label>
                   </div>
                 </div>
 

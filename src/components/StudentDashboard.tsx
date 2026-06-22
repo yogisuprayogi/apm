@@ -284,27 +284,31 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
 
             {/* Action Card trigger print */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-850/30 border-t border-slate-100 dark:border-slate-850 flex items-center justify-between flex-wrap gap-3">
-              <span className="text-xs text-slate-500 dark:text-slate-400 leading-normal max-w-sm font-sans">
-                Harap cetak pengumuman resmi ini sebagai dokumen penunjang pendaftaran ulang kelompok belajar.
-              </span>
-              <button
-                onClick={handlePrint}
-                className="flex items-center gap-2 py-2 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs md:text-sm rounded-xl shadow-lg shadow-indigo-100 dark:shadow-none transition-all cursor-pointer focus:outline-none"
-              >
-                <Printer className="w-4 h-4" />
-                Cetak Bukti Pengumuman (PDF)
-              </button>
-            </div>
+            {schoolProfile.showPrintPdf !== false && (
+              <div className="p-4 bg-slate-50 dark:bg-slate-850/30 border-t border-slate-100 dark:border-slate-850 flex items-center justify-between flex-wrap gap-3">
+                <span className="text-xs text-slate-500 dark:text-slate-400 leading-normal max-w-sm font-sans">
+                  Harap cetak pengumuman resmi ini sebagai dokumen penunjang pendaftaran ulang kelompok belajar.
+                </span>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-2 py-2 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs md:text-sm rounded-xl shadow-lg shadow-indigo-100 dark:shadow-none transition-all cursor-pointer focus:outline-none"
+                >
+                  <Printer className="w-4 h-4" />
+                  Cetak Bukti Pengumuman (PDF)
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Quick Informational Notice */}
-          <div className="p-5 border border-blue-105 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/10 rounded-2xl flex gap-3.5">
-            <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400 shrink-0" />
-            <div className="text-xs md:text-sm text-slate-750 dark:text-slate-350 leading-relaxed">
-              <strong className="text-blue-900 dark:text-blue-300 font-sans">Pemberitahuan Wali Orang Tua:</strong> Sistem seleksi paket bimbingan didasarkan atas instrumen evaluasi kualifikasi bimbingan konseling mandiri. Jika nama, kelas, atau NISN tidak sepadan dengan data sekolah, silakan ajukan klarifikasi langsung ke administrator di unit BK.
+          {schoolProfile.showParentNotification !== false && (
+            <div className="p-5 border border-blue-105 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/10 rounded-2xl flex gap-3.5">
+              <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400 shrink-0" />
+              <div className="text-xs md:text-sm text-slate-750 dark:text-slate-350 leading-relaxed font-sans">
+                <strong className="text-blue-900 dark:text-blue-300 font-sans">Pemberitahuan Wali Orang Tua:</strong> Sistem seleksi paket bimbingan didasarkan atas instrumen evaluasi kualifikasi bimbingan konseling mandiri. Jika nama, kelas, atau NISN tidak sepadan dengan data sekolah, silakan ajukan klarifikasi langsung ke administrator di unit BK.
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* ------------------------------------------------------------- */}

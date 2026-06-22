@@ -3,6 +3,8 @@ export interface SchoolProfile {
   logo: string; // Base64 encoding
   announcementDate: string;
   announcementHeader: string;
+  showPrintPdf?: boolean;
+  showParentNotification?: boolean;
 }
 
 export interface Student {

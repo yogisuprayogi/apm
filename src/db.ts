@@ -45,6 +45,8 @@ const DEFAULT_STATE: DatabaseState = {
     logo: DEFAULT_LOGO_SVG,
     announcementDate: '2026-06-25',
     announcementHeader: 'PENGUMUMAN HASIL PEMILIHAN REKOMENDASI PAKET MATA PELAJARAN KELOMPOK BELAJAR KELAS XI SEMESTER GANJIL',
+    showPrintPdf: true,
+    showParentNotification: true,
   },
   students: [
     {
@@ -144,6 +146,8 @@ export function getDb(): DatabaseState {
         if (!cache.students) cache.students = [];
         if (!cache.activityLogs) cache.activityLogs = [];
         if (!cache.schoolProfile) cache.schoolProfile = DEFAULT_STATE.schoolProfile;
+        if (cache.schoolProfile.showPrintPdf === undefined) cache.schoolProfile.showPrintPdf = true;
+        if (cache.schoolProfile.showParentNotification === undefined) cache.schoolProfile.showParentNotification = true;
         if (!cache.schoolProfile.logo || cache.schoolProfile.logo.includes('viewBox="0 0 100 100"')) {
           cache.schoolProfile.logo = DEFAULT_LOGO_SVG;
         }
@@ -189,6 +193,16 @@ export async function pushAllToSupabase(state: DatabaseState): Promise<void> {
       announcement_header: state.schoolProfile.announcementHeader
     });
     if (profileErr) console.warn('[Supabase] Profile sync warning:', profileErr.message);
+
+    // 1b. Upsert Student View Visibility Settings using a standalone row to avoid schema alterations
+    const { error: settingsErr } = await supabase.from('school_profile').upsert({
+      id: 'settings_student_view',
+      name: 'settings',
+      logo: '',
+      announcement_date: state.schoolProfile.showPrintPdf === false ? 'false' : 'true',
+      announcement_header: state.schoolProfile.showParentNotification === false ? 'false' : 'true'
+    });
+    if (settingsErr) console.warn('[Supabase] Settings sync warning:', settingsErr.message);
 
     // 2. Upsert Admin Configs
     const { error: adminErr } = await supabase.from('admin_config').upsert({
@@ -268,7 +282,15 @@ export async function syncFromSupabase(): Promise<void> {
       return;
     }
 
-    const profileRes = profileList[0];
+    const profileRes = profileList.find(p => p.id === 'current') || profileList[0];
+    const settingsRes = profileList.find(p => p.id === 'settings_student_view');
+
+    let showPrintPdf = true;
+    let showParentNotification = true;
+    if (settingsRes) {
+      showPrintPdf = settingsRes.announcement_date !== 'false';
+      showParentNotification = settingsRes.announcement_header !== 'false';
+    }
 
     // Fetch admin_config using select()
     const { data: adminList, error: aErr } = await supabase.from('admin_config').select('*');
@@ -328,7 +350,9 @@ export async function syncFromSupabase(): Promise<void> {
         name: profileRes.name,
         logo: finalLogo,
         announcementDate: profileRes.announcement_date,
-        announcementHeader: profileRes.announcement_header
+        announcementHeader: profileRes.announcement_header,
+        showPrintPdf,
+        showParentNotification
       },
       students: (studentsRes || []).map(s => ({
         id: s.id,

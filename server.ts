@@ -607,7 +607,7 @@ app.get('/api/school/profile', (req, res) => {
 });
 
 app.put('/api/school/profile', sanitizeInput, authenticate, requireRole('admin'), (req, res) => {
-  const { name, announcementDate, announcementHeader, logo } = req.body;
+  const { name, announcementDate, announcementHeader, logo, showPrintPdf, showParentNotification } = req.body;
   const ipAddress = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1') as string;
 
   if (!name || !announcementDate || !announcementHeader) {
@@ -619,7 +619,9 @@ app.put('/api/school/profile', sanitizeInput, authenticate, requireRole('admin')
     name,
     announcementDate,
     announcementHeader,
-    logo: logo !== undefined ? logo : db.schoolProfile.logo
+    logo: logo !== undefined ? logo : db.schoolProfile.logo,
+    showPrintPdf: showPrintPdf !== undefined ? !!showPrintPdf : db.schoolProfile.showPrintPdf,
+    showParentNotification: showParentNotification !== undefined ? !!showParentNotification : db.schoolProfile.showParentNotification
   };
 
   saveDb(db);
