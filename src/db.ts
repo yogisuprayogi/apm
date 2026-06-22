@@ -7,7 +7,12 @@ import { createClient } from '@supabase/supabase-js';
 const DB_FILE_PATH = path.join(process.cwd(), 'database.json');
 
 // Supabase Configuration
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://rcpdjaazjfjdqyttuaqn.supabase.co';
+let SUPABASE_URL = process.env.SUPABASE_URL || 'https://rcpdjaazjfjdqyttuaqn.supabase.co';
+if (SUPABASE_URL.endsWith('/rest/v1/')) {
+  SUPABASE_URL = SUPABASE_URL.slice(0, -9);
+} else if (SUPABASE_URL.endsWith('/rest/v1')) {
+  SUPABASE_URL = SUPABASE_URL.slice(0, -8);
+}
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjcGRqYWF6amZqZHF5dHR1YXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NDE2ODIsImV4cCI6MjA5NzQxNzY4Mn0.8yxob1PzeemWQooATudF4PLpIfM7yahNkrEq9LHGq5M';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
