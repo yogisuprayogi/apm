@@ -174,12 +174,16 @@ export default function App() {
         return true;
       } else {
         const errorData = await res.json();
-        showToast(errorData.message || 'Gagal masuk sistem', 'error');
-        return false;
+        const errMsg = errorData.message || 'Gagal masuk sistem';
+        showToast(errMsg, 'error');
+        throw new Error(errMsg);
       }
-    } catch (err) {
-      showToast('Koneksi ke server terputus.', 'error');
-      return false;
+    } catch (err: any) {
+      if (err instanceof TypeError || !err.message) {
+        showToast('Koneksi ke server terputus.', 'error');
+        throw new Error('Gagal menghubungkan ke server. Pastikan server aktif.');
+      }
+      throw err;
     }
   };
 
