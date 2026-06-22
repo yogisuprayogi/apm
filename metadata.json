@@ -1,0 +1,6 @@
+{
+  "name": "SMAN 2 CIAMIS Portal Pengumuman",
+  "description": "Aplikasi modern, responsif, dan aman untuk mengumumkan pilihan paket belajar mandiri siswa SMAN 2 CIAMIS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
