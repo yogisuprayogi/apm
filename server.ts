@@ -557,9 +557,23 @@ app.post('/api/students/import', sanitizeInput, authenticate, requireRole('admin
       return;
     }
 
-    // Validate packets
-    const validPackets = ['Paket 1', 'Paket 2', 'Paket 3', 'Paket 4', 'Paket 5'];
-    if (!validPackets.includes(packet)) {
+    // Validate and normalize packets case-insensitively (e.g. 'PAKET 1' -> 'Paket 1', '1' -> 'Paket 1')
+    let normalizedPacket = String(packet).trim().replace(/\s+/g, ' ');
+    const validPacketsLower = ['paket 1', 'paket 2', 'paket 3', 'paket 4', 'paket 5'];
+    const idxLower = validPacketsLower.indexOf(normalizedPacket.toLowerCase());
+    
+    let matchedPacket = '';
+    if (idxLower !== -1) {
+      matchedPacket = ['Paket 1', 'Paket 2', 'Paket 3', 'Paket 4', 'Paket 5'][idxLower];
+    } else {
+      // Resolve formats like "1", "paket1", "paket-1", "PAKET1"
+      const numberOnlyMatch = normalizedPacket.match(/^(?:paket[\s\-_]*)?([1-5])$/i);
+      if (numberOnlyMatch) {
+        matchedPacket = `Paket ${numberOnlyMatch[1]}`;
+      }
+    }
+
+    if (!matchedPacket) {
       failureCount++;
       errors.push(`Baris ${rowNum} (${nisnStr}): Nama Paket tidak valid '${packet}' (Gunakan: Paket 1 - Paket 5)`);
       return;
@@ -574,7 +588,7 @@ app.post('/api/students/import', sanitizeInput, authenticate, requireRole('admin
       nisn: nisnStr,
       name: String(name).trim(),
       kelas: String(kelas).trim(),
-      packet: packet,
+      packet: matchedPacket as any,
       status: statVal,
       notes: notes ? String(notes).trim() : '',
       isActive: true,
