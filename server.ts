@@ -12,8 +12,31 @@ const PORT = 3000;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Auto-Hydration Middleware for serverless / Vercel container instances
+let isSupabaseLoaded = false;
+let supabaseLoadPromise: Promise<void> | null = null;
+
+app.use(async (req, res, next) => {
+  if (!isSupabaseLoaded) {
+    if (!supabaseLoadPromise) {
+      console.log('[Supabase Serverless Setup] Pre-hydrating local memory from Supabase cloud...');
+      supabaseLoadPromise = syncFromSupabase()
+        .then(() => {
+          isSupabaseLoaded = true;
+          console.log('[Supabase Serverless Setup] Pre-hydration completed successfully.');
+        })
+        .catch((err) => {
+          console.error('[Supabase Serverless Setup] Warning: pre-hydration failed:', err);
+          supabaseLoadPromise = null; // Let it retry on the next request if it fails
+        });
+    }
+    await supabaseLoadPromise;
+  }
+  next();
+});
+
 // -------------------------------------------------------------
-// SECURE IN-MEMORY SESSION ENGINE
+// SECURE STATELESS SESSION ENGINE
 // -------------------------------------------------------------
 interface Session {
   token: string;
@@ -21,13 +44,92 @@ interface Session {
   userId: string;
   expiresAt: number;
 }
-const activeSessions = new Map<string, Session>();
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const SESSION_SECRET = process.env.SESSION_SECRET || 'sman_2_ciamis_super_secret_key_2026';
 
-// Helper to generate a random cryptographically safe token
-function generateSecureToken() {
-  return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+function getSigningSecret(role: 'admin' | 'student'): string {
+  if (role === 'admin') {
+    const db = getDb();
+    return SESSION_SECRET + '_' + db.adminPasswordHash;
+  }
+  return SESSION_SECRET;
 }
+
+// Helper to generate a random cryptographically safe token with stateless session signature
+function generateSecureToken(role: 'admin' | 'student', userId: string): string {
+  const expiresAt = Date.now() + SESSION_TIMEOUT_MS;
+  const payload = JSON.stringify({
+    r: role === 'admin' ? 'a' : 's',
+    u: userId,
+    e: expiresAt,
+    n: crypto.randomBytes ? crypto.randomBytes(8).toString('hex') : Math.random().toString(36).substring(2)
+  });
+  const base64Payload = Buffer.from(payload).toString('base64url');
+  const secret = getSigningSecret(role);
+  const signature = crypto.createHmac('sha256', secret).update(base64Payload).digest('base64url');
+  return `${base64Payload}.${signature}`;
+}
+
+const activeSessions = {
+  get(token: string): Session | undefined {
+    if (!token || typeof token !== 'string') return undefined;
+    try {
+      const lastDot = token.lastIndexOf('.');
+      if (lastDot === -1) return undefined;
+
+      const beforeDot = token.substring(0, lastDot);
+      const signature = token.substring(lastDot + 1);
+
+      const lastUnderscore = beforeDot.lastIndexOf('_');
+      if (lastUnderscore === -1) return undefined;
+
+      const base64Payload = beforeDot.substring(lastUnderscore + 1);
+      const payloadStr = Buffer.from(base64Payload, 'base64url').toString('utf-8');
+      const payload = JSON.parse(payloadStr);
+
+      if (Date.now() > payload.e) {
+        return undefined; // Expired
+      }
+
+      const role = payload.r === 'a' ? 'admin' : 'student';
+      const secret = getSigningSecret(role);
+
+      const expectedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(beforeDot)
+        .digest('base64url');
+
+      if (signature !== expectedSignature) {
+        return undefined;
+      }
+
+      return {
+        token,
+        role,
+        userId: payload.u,
+        expiresAt: payload.e
+      };
+    } catch (e) {
+      return undefined;
+    }
+  },
+
+  set(token: string, session: Session): void {
+    // Stateless signed token - no storage required
+  },
+
+  delete(token: string): void {
+    // Stateless signed token - client discards it
+  },
+
+  keys(): string[] {
+    return [];
+  },
+
+  clear(): void {
+    // No-op
+  }
+};
 
 // Session Validation Middleware (Auto Logout & RBAC)
 function authenticate(req: any, res: any, next: any) {
@@ -44,15 +146,10 @@ function authenticate(req: any, res: any, next: any) {
   }
 
   if (Date.now() > session.expiresAt) {
-    activeSessions.delete(token);
     return res.status(419).json({ message: 'Sesi Anda telah berakhir karena tidak ada aktivitas selama 30 menit.' });
   }
 
-  // Sliding session: refresh expiration time upon active request
-  session.expiresAt = Date.now() + SESSION_TIMEOUT_MS;
-  activeSessions.set(token, session);
-
-  // Bind session metadata to request
+  // We bind session metadata to request
   req.session = session;
   next();
 }
@@ -102,7 +199,7 @@ app.post('/api/auth/login', sanitizeInput, (req, res) => {
   if (username === 'admin') {
     const computedHash = hashPassword(password, db.adminSalt);
     if (computedHash === db.adminPasswordHash) {
-      const token = 'admin_tok_' + generateSecureToken();
+      const token = 'admin_tok_' + generateSecureToken('admin', 'admin');
       activeSessions.set(token, {
         token,
         role: 'admin',
@@ -136,7 +233,7 @@ app.post('/api/auth/login', sanitizeInput, (req, res) => {
 
   const computedHash = hashPassword(password, student.salt);
   if (computedHash === student.passwordHash) {
-    const token = 'student_tok_' + student.nisn + '_' + generateSecureToken();
+    const token = 'student_tok_' + student.nisn + '_' + generateSecureToken('student', student.id);
     activeSessions.set(token, {
       token,
       role: 'student',
@@ -645,4 +742,8 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
