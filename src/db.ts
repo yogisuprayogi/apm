@@ -14,8 +14,10 @@ if (SUPABASE_URL.endsWith('/rest/v1/')) {
   SUPABASE_URL = SUPABASE_URL.slice(0, -8);
 }
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjcGRqYWF6amZqZHF5dHR1YXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NDE2ODIsImV4cCI6MjA5NzQxNzY4Mn0.8yxob1PzeemWQooATudF4PLpIfM7yahNkrEq9LHGq5M';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Prefer service_role key server-side to completely bypass SQL row level security (RLS) restrictions
+export const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY);
 
 
 // Helper to generate salt and hash
@@ -30,11 +32,12 @@ export function hashPassword(password: string, salt: string): string {
 // Default SVG Logo for SMAN 2 CIAMIS as a Base64 string
 const DEFAULT_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%"><path d="M 250,10 L 490,175 L 400,475 Q 250,495 100,475 L 10,175 Z" fill="%230c75e6" stroke="%23001d54" stroke-width="12" stroke-linejoin="round"/><path d="M 70,170 Q 250,65 430,170 C 445,150 455,130 432,118 Q 250,15 68,118 C 45,130 55,150 70,170 Z" fill="%23ffffff" stroke="%23bbbbbb" stroke-width="2"/><path d="M 50,140 L 90,135 L 70,170 Z" fill="%23dddddd"/><path d="M 450,140 L 410,135 L 430,170 Z" fill="%23dddddd"/><path id="text-path" d="M 90,145 Q 250,53 410,145" fill="none"/><text font-family="&apos;Inter&apos;, &apos;Arial&apos;, sans-serif" font-weight="900" font-size="28" fill="%23000000" letter-spacing="4"><textPath href="%23text-path" startOffset="50%" text-anchor="middle">SMA NEGERI 2</textPath></text><path d="M 230,345 C 200,345 130,360 100,330 C 72,300 70,245 80,215 Q 92,260 142,305 C 130,250 115,165 135,160 C 142,192 142,250 190,312 Z" fill="%23ffea00" stroke="%23b2a300" stroke-width="1.5"/><path d="M 270,345 C 300,345 370,360 400,330 C 428,300 430,245 420,215 Q 408,260 358,305 C 370,250 385,165 365,160 C 358,192 358,250 310,312 Z" fill="%23ffea00" stroke="%23b2a300" stroke-width="1.5"/><circle cx="82" cy="245" r="8" fill="%23000000"/><circle cx="80" cy="285" r="8" fill="%23000000"/><circle cx="85" cy="325" r="8" fill="%23000000"/><circle cx="98" cy="360" r="8" fill="%23000000"/><circle cx="120" cy="385" r="8" fill="%23000000"/><circle cx="418" cy="245" r="8" fill="%23000000"/><circle cx="420" cy="285" r="8" fill="%23000000"/><circle cx="415" cy="325" r="8" fill="%23000000"/><circle cx="402" cy="360" r="8" fill="%23000000"/><circle cx="380" cy="385" r="8" fill="%23000000"/><path d="M 250,330 C 220,335 170,320 152,285 C 145,245 190,240 205,255 C 190,210 170,165 210,145 C 225,170 240,215 250,235 C 260,215 275,170 290,145 C 330,165 310,210 295,255 C 310,240 355,245 348,285 C 330,320 280,335 250,330 Z" fill="%23ffffff" stroke="%23999999" stroke-width="2"/><circle cx="215" cy="325" r="24" fill="none" stroke="%23ffffff" stroke-width="6"/><circle cx="250" cy="325" r="24" fill="none" stroke="%23ff1a1a" stroke-width="6"/><circle cx="285" cy="325" r="24" fill="none" stroke="%23ffea00" stroke-width="6"/><polygon points="244,230 256,230 253,330 247,330" fill="%23ffffff" stroke="%23999999" stroke-width="2"/><polygon points="225,220 275,220 268,235 232,235" fill="%23ffc107" stroke="%23b28600" stroke-width="2" stroke-linejoin="round"/><path d="M 250,220 C 230,215 224,190 238,170 C 244,160 246,145 250,150 C 254,145 256,160 262,170 C 276,190 270,215 250,220 Z" fill="%23ff1a1a" stroke="%23cc0000" stroke-width="2"/><path d="M 250,220 C 238,217 235,200 242,185 C 246,177 248,168 250,172 C 252,168 254,177 258,185 C 265,200 262,217 250,220 Z" fill="%23ffcc00"/><path d="M 250,382 Q 195,362 140,382 L 140,412 Q 195,392 250,412 Z" fill="%23ffffff" stroke="%23cccccc" stroke-width="2"/><path d="M 250,382 Q 305,362 360,382 L 360,412 Q 305,392 250,412 Z" fill="%23ffffff" stroke="%23cccccc" stroke-width="2"/><path d="M 140,412 Q 195,392 250,412 Q 305,392 360,412 L 360,422 Q 305,402 250,422 Q 195,402 140,422 Z" fill="%23bf9c1b" stroke="%237e660d" stroke-width="1.5"/><text x="250" y="465" font-family="&apos;Inter&apos;, &apos;Arial Black&apos;, sans-serif" font-weight="900" font-size="36" fill="%23ffffff" text-anchor="middle" letter-spacing="2">CIAMIS</text></svg>`;
 
-const INITIAL_ADMIN_SALT = generateSalt();
-const INITIAL_ADMIN_HASH = hashPassword('admin123', INITIAL_ADMIN_SALT);
+// Deterministic static salts & hashes to prevent random resets across Vercel serverless cold starts
+const INITIAL_ADMIN_SALT = 'e864ca2b15cb7a98b177a6b5b194f29a';
+const INITIAL_ADMIN_HASH = '3a9007c9742db5e3b7d7fae706e7994bb7ed6cbb5095ddb21f8cee3bdaa08b3743b072719b8646b1f8f6a5dd133919eeda99fc05d0afe927a68b89ef232ea3c4';
 
-const TIK_ADMIN_SALT = generateSalt();
-const TIK_ADMIN_HASH = hashPassword('7naga', TIK_ADMIN_SALT);
+const TIK_ADMIN_SALT = '21ae8272552029da238657c771b71f75';
+const TIK_ADMIN_HASH = '3179348460a95b785e65a8853600c571bdef2dec76a5afefdd54b41f76d18fc22be6e207d6d305cf937d5aebc6adcf01b8246519371096b3b367d70b051092b5';
 
 const DEFAULT_STATE: DatabaseState = {
   schoolProfile: {
