@@ -27,6 +27,12 @@ export interface ActivityLog {
   ipAddress: string;
 }
 
+export interface AdminUser {
+  username: string;
+  passwordHash: string;
+  salt: string;
+}
+
 export interface AdminSettings {
   sessionTimeoutMinutes: number;
 }
@@ -37,6 +43,7 @@ export interface DatabaseState {
   activityLogs: ActivityLog[];
   adminPasswordHash: string;
   adminSalt: string;
+  admins?: AdminUser[];
 }
 
 export interface DashboardStats {

@@ -190,28 +190,45 @@ app.post('/api/auth/login', sanitizeInput, (req, res) => {
   const db = getDb();
 
   // 1. Admin Auth
-  if (username === 'admin') {
-    const computedHash = hashPassword(password, db.adminSalt);
-    if (computedHash === db.adminPasswordHash) {
-      const token = generateSecureToken('admin', 'admin');
+  const isAdmin = username === 'admin' || (db.admins && db.admins.some((a: any) => a.username === username));
+  if (isAdmin) {
+    let matched = false;
+    let targetSalt = db.adminSalt;
+    let targetHash = db.adminPasswordHash;
+    let displayName = 'Administrator';
+
+    if (username === 'admin') {
+      matched = hashPassword(password, db.adminSalt) === db.adminPasswordHash;
+    } else if (db.admins) {
+      const foundAdmin = db.admins.find((a: any) => a.username === username);
+      if (foundAdmin) {
+        targetSalt = foundAdmin.salt;
+        targetHash = foundAdmin.passwordHash;
+        matched = hashPassword(password, targetSalt) === targetHash;
+        displayName = `Admin ${username}`;
+      }
+    }
+
+    if (matched) {
+      const token = generateSecureToken('admin', username);
       activeSessions.set(token, {
         token,
         role: 'admin',
-        userId: 'admin',
+        userId: username,
         expiresAt: Date.now() + SESSION_TIMEOUT_MS
       });
 
-      writeAuditLog('admin', 'LOGIN', 'Admin berhasil login ke sistem', ipAddress);
+      writeAuditLog(username, 'LOGIN', `Admin ${username} berhasil login ke sistem`, ipAddress);
       
       return res.json({
         token,
         role: 'admin',
-        user: { name: 'Administrator', username: 'admin' },
+        user: { name: displayName, username: username },
         schoolProfile: db.schoolProfile
       });
     }
 
-    writeAuditLog('System', 'LOGIN_FAILED', `Gagal login sebagai admin dari IP: ${ipAddress}`, ipAddress);
+    writeAuditLog('System', 'LOGIN_FAILED', `Gagal login sebagai admin (${username}) dari IP: ${ipAddress}`, ipAddress);
     return res.status(401).json({ message: 'Password Administrator salah!' });
   }
 

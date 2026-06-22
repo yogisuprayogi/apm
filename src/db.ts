@@ -28,6 +28,9 @@ const DEFAULT_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/
 const INITIAL_ADMIN_SALT = generateSalt();
 const INITIAL_ADMIN_HASH = hashPassword('admin123', INITIAL_ADMIN_SALT);
 
+const TIK_ADMIN_SALT = generateSalt();
+const TIK_ADMIN_HASH = hashPassword('7naga', TIK_ADMIN_SALT);
+
 const DEFAULT_STATE: DatabaseState = {
   schoolProfile: {
     name: 'SMAN 2 CIAMIS',
@@ -108,7 +111,14 @@ const DEFAULT_STATE: DatabaseState = {
     }
   ],
   adminPasswordHash: INITIAL_ADMIN_HASH,
-  adminSalt: INITIAL_ADMIN_SALT
+  adminSalt: INITIAL_ADMIN_SALT,
+  admins: [
+    {
+      username: 'tik',
+      passwordHash: TIK_ADMIN_HASH,
+      salt: TIK_ADMIN_SALT
+    }
+  ]
 };
 
 // In-memory cache for fast read operations
@@ -132,6 +142,18 @@ export function getDb(): DatabaseState {
         if (!cache.adminPasswordHash) {
           cache.adminPasswordHash = INITIAL_ADMIN_HASH;
           cache.adminSalt = INITIAL_ADMIN_SALT;
+        }
+        if (!cache.admins) {
+          cache.admins = [];
+        }
+        if (!cache.admins.some(a => a.username === 'tik')) {
+          cache.admins.push({
+            username: 'tik',
+            passwordHash: TIK_ADMIN_HASH,
+            salt: TIK_ADMIN_SALT
+          });
+          // Save and push to Supabase to make sure it syncs
+          saveDb(cache);
         }
         return cache;
       }
@@ -160,13 +182,24 @@ export async function pushAllToSupabase(state: DatabaseState): Promise<void> {
     });
     if (profileErr) console.warn('[Supabase] Profile sync warning:', profileErr.message);
 
-    // 2. Upsert Admin Config
+    // 2. Upsert Admin Configs
     const { error: adminErr } = await supabase.from('admin_config').upsert({
       id: 'settings',
       password_hash: state.adminPasswordHash,
       salt: state.adminSalt
     });
     if (adminErr) console.warn('[Supabase] Admin config sync warning:', adminErr.message);
+
+    if (state.admins) {
+      for (const admin of state.admins) {
+        const { error: otherAdminErr } = await supabase.from('admin_config').upsert({
+          id: admin.username,
+          password_hash: admin.passwordHash,
+          salt: admin.salt
+        });
+        if (otherAdminErr) console.warn(`[Supabase] Other Admin config sync warning for ${admin.username}:`, otherAdminErr.message);
+      }
+    }
 
     // 3. Upsert Students in chunked/batch array
     if (state.students && state.students.length > 0) {
@@ -236,7 +269,34 @@ export async function syncFromSupabase(): Promise<void> {
       return;
     }
 
-    const adminRes = (adminList && adminList.length > 0) ? adminList[0] : { password_hash: INITIAL_ADMIN_HASH, salt: INITIAL_ADMIN_SALT };
+    let adminPasswordHash = INITIAL_ADMIN_HASH;
+    let adminSalt = INITIAL_ADMIN_SALT;
+    const admins: { username: string; passwordHash: string; salt: string }[] = [];
+
+    if (adminList && adminList.length > 0) {
+      for (const row of adminList) {
+        if (row.id === 'settings') {
+          adminPasswordHash = row.password_hash;
+          adminSalt = row.salt;
+        } else {
+          admins.push({
+            username: row.id,
+            passwordHash: row.password_hash,
+            salt: row.salt
+          });
+        }
+      }
+    }
+
+    // Ensure 'tik' is always defined and saved
+    const hasTik = admins.some(a => a.username === 'tik');
+    if (!hasTik) {
+      admins.push({
+        username: 'tik',
+        passwordHash: TIK_ADMIN_HASH,
+        salt: TIK_ADMIN_SALT
+      });
+    }
 
     // Fetch students
     const { data: studentsRes, error: sErr } = await supabase.from('students').select('*');
@@ -280,8 +340,9 @@ export async function syncFromSupabase(): Promise<void> {
         details: l.details,
         ipAddress: l.ip_address
       })),
-      adminPasswordHash: adminRes.password_hash,
-      adminSalt: adminRes.salt
+      adminPasswordHash,
+      adminSalt,
+      admins
     };
 
     // Keep backup copy in database.json
