@@ -172,7 +172,7 @@ function sanitizeInput(req: any, res: any, next: any) {
     }
     return val;
   };
-  req.body = sanitize(req.body);
+  req.body = sanitize(req.body || {});
   next();
 }
 
@@ -717,6 +717,18 @@ app.post('/api/database/restore', sanitizeInput, authenticate, requireRole('admi
   activeSessions.clear();
 
   res.json({ message: 'Database berhasil dipulihkan sepenuhnya. Silakan segarkan halaman.' });
+});
+
+// -------------------------------------------------------------
+// GLOBAL ERROR HANDLER
+// -------------------------------------------------------------
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('[Unhandled Error]', err);
+  res.status(500).json({
+    message: `Kesalahan Internal Server (500): ${err.message || err}`,
+    error: err.message || err,
+    stack: err.stack
+  });
 });
 
 // -------------------------------------------------------------
