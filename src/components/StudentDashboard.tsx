@@ -219,7 +219,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 <div>
                   <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white font-sans">{student.name}</h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-mono">
-                    NISN: <span className="font-bold text-slate-700 dark:text-slate-200">{student.nisn}</span> • Kelas: <span className="font-bold">{student.kelas}</span>
+                    NISN: <span className="font-bold text-slate-700 dark:text-slate-200">{student.nisn}</span> • Kelas: <span className="font-bold text-slate-700 dark:text-slate-200">{student.kelas}</span>
                   </p>
                 </div>
 
@@ -257,7 +257,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                   </h4>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {getSubjects(student.packet).map((sub, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-350">
+                      <li key={index} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
                         <span className="w-5 h-5 flex items-center justify-center bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-mono text-[11px] font-bold rounded-md">
                           {index + 1}
                         </span>
