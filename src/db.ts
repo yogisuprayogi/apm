@@ -240,6 +240,38 @@ export async function pushAllToSupabase(state: DatabaseState): Promise<void> {
 
       const { error: studErr } = await supabase.from('students').upsert(studentRows);
       if (studErr) console.warn('[Supabase] Students sync warning:', studErr.message);
+
+      // Reconcile Deletions: Delete students from Supabase who do not exist in current memory cache
+      try {
+        const { data: remoteIdsData, error: fetchIdsErr } = await supabase.from('students').select('id');
+        if (!fetchIdsErr && remoteIdsData) {
+          const remoteIds = remoteIdsData.map(r => r.id);
+          const currentIds = new Set(state.students.map(s => s.id));
+          const toDelete = remoteIds.filter(id => !currentIds.has(id));
+          if (toDelete.length > 0) {
+            // Delete in safe chunks to avoid exceed URL parameters limits
+            for (let i = 0; i < toDelete.length; i += 200) {
+              const chunk = toDelete.slice(i, i + 200);
+              const { error: delErr } = await supabase.from('students').delete().in('id', chunk);
+              if (delErr) {
+                console.warn('[Supabase] Student chunk deletion sync failed:', delErr.message);
+              }
+            }
+          }
+        }
+      } catch (err: any) {
+        console.warn('[Supabase] Reconcile deletions catch warning:', err.message || err);
+      }
+    } else {
+      // If state.students is completely empty (e.g. wipe database), delete all students from Supabase
+      try {
+        const { error: delAllErr } = await supabase.from('students').delete().neq('id', 'does-not-exist-placeholder');
+        if (delAllErr) {
+          console.warn('[Supabase] Students table clear-all sync warning:', delAllErr.message);
+        }
+      } catch (err: any) {
+        console.warn('[Supabase] Students table wipe catch warning:', err.message || err);
+      }
     }
 
     // 4. Upsert Activity Logs
