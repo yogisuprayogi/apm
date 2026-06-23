@@ -6,6 +6,7 @@ import { AdminDashboard } from './components/AdminDashboard.js';
 import { ToastContainer, ToastMessage } from './components/Toast.js';
 import { ConfirmModal } from './components/ConfirmModal.js';
 import { GraduationCap } from 'lucide-react';
+import { getApiUrl } from './utils/api.js';
 
 export default function App() {
   const [role, setRole] = useState<'admin' | 'student' | null>(null);
@@ -99,7 +100,7 @@ export default function App() {
       // Fetch public profile as fallback first
       let currentProfile: SchoolProfile | null = null;
       try {
-        const profRes = await fetch('/api/school/profile');
+        const profRes = await fetch(getApiUrl('/api/school/profile'));
         if (profRes.ok) {
           currentProfile = await profRes.json();
           setSchoolProfile(currentProfile!);
@@ -110,7 +111,7 @@ export default function App() {
 
       if (savedToken && savedRole) {
         try {
-          const res = await fetch('/api/auth/session', {
+          const res = await fetch(getApiUrl('/api/auth/session'), {
             headers: {
               'Authorization': `Bearer ${savedToken}`
             }
@@ -143,7 +144,7 @@ export default function App() {
 
   const handleLogin = async (loginRole: 'admin' | 'student', username: string, pw: string): Promise<boolean> => {
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(getApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -201,7 +202,7 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', {
+      await fetch(getApiUrl('/api/auth/logout'), {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

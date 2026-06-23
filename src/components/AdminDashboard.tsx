@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SchoolProfile, ActivityLog, DashboardStats, Student } from '../types.js';
+import { getApiUrl } from '../utils/api.js';
 
 interface AdminDashboardProps {
   schoolProfile: SchoolProfile;
@@ -123,7 +124,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Fetch Dashboard Stats
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/stats', {
+      const res = await fetch(getApiUrl('/api/stats'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -150,7 +151,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         limit: '8'
       }).toString();
 
-      const res = await fetch(`/api/students?${query}`, {
+      const res = await fetch(getApiUrl(`/api/students?${query}`), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -186,7 +187,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     try {
       if (modalMode === 'add') {
-        const res = await fetch('/api/students', {
+        const res = await fetch(getApiUrl('/api/students'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -206,7 +207,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         }
       } else {
         // Edit mode
-        const res = await fetch(`/api/students/${formData.id}`, {
+        const res = await fetch(getApiUrl(`/api/students/${formData.id}`), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -237,7 +238,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       'danger',
       async () => {
         try {
-          const res = await fetch(`/api/students/${id}`, {
+          const res = await fetch(getApiUrl(`/api/students/${id}`), {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
           });
@@ -264,7 +265,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       'danger',
       async () => {
         try {
-          const res = await fetch('/api/students/clear-all', {
+          const res = await fetch(getApiUrl('/api/students/clear-all'), {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
           });
@@ -354,7 +355,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setImportedRowsLength(rawRows.length);
 
         // Upload validated parsed list to database microservice
-        const response = await fetch('/api/students/import', {
+        const response = await fetch(getApiUrl('/api/students/import'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -387,7 +388,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       'info',
       async () => {
         try {
-          const res = await fetch('/api/students?limit=5000', {
+          const res = await fetch(getApiUrl('/api/students?limit=5000'), {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) {
@@ -463,7 +464,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/school/profile', {
+      const res = await fetch(getApiUrl('/api/school/profile'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -489,7 +490,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // ----------------- DATABASE RESTORE -----------------
   const handleBackupDownload = () => {
     // Direct AJAX implementation for authorized content
-    fetch('/api/database/backup', {
+    fetch(getApiUrl('/api/database/backup'), {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(r => r.blob())
@@ -529,7 +530,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       'warning',
       async () => {
         try {
-          const res = await fetch('/api/database/restore', {
+          const res = await fetch(getApiUrl('/api/database/restore'), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -563,7 +564,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
 
     try {
-      const res = await fetch('/api/admin/change-password', {
+      const res = await fetch(getApiUrl('/api/admin/change-password'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
